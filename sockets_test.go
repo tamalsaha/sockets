@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-martini/martini"
+	"gopkg.in/macaron.v1"
 	"github.com/gorilla/websocket"
 )
 
 const (
-	host              string = "http://localhost:3000"
-	endpoint          string = "ws://localhost:3000"
+	host              string = "http://localhost:4000"
+	endpoint          string = "ws://localhost:4000"
 	recvPath          string = "/receiver"
 	sendPath          string = "/sender"
 	pingPath          string = "/ping"
@@ -145,9 +145,9 @@ func expectIsDone(t *testing.T, done bool) {
 }
 
 func startServer() {
-	m := martini.Classic()
+	m := macaron.Classic()
 
-	m.Get(recvPath, JSON(Message{}), func(context martini.Context, receiver <-chan *Message, done <-chan bool) int {
+	m.Get(recvPath, JSON(Message{}), func(context *macaron.Context, receiver <-chan *Message, done <-chan bool) int {
 		for {
 			select {
 			case msg := <-receiver:
@@ -161,7 +161,7 @@ func startServer() {
 		return http.StatusOK
 	})
 
-	m.Get(sendPath, JSON(Message{}), func(context martini.Context, sender chan<- *Message, done <-chan bool, disconnect chan<- int) int {
+	m.Get(sendPath, JSON(Message{}), func(context *macaron.Context, sender chan<- *Message, done <-chan bool, disconnect chan<- int) int {
 		ticker := time.NewTicker(1 * time.Millisecond)
 		bomb := time.After(4 * time.Millisecond)
 
@@ -182,7 +182,7 @@ func startServer() {
 		return http.StatusOK
 	})
 
-	m.Get(recvStringsPath, Messages(), func(context martini.Context, receiver <-chan string, done <-chan bool) int {
+	m.Get(recvStringsPath, Messages(), func(context *macaron.Context, receiver <-chan string, done <-chan bool) int {
 		for {
 			select {
 			case msg := <-receiver:
@@ -196,7 +196,7 @@ func startServer() {
 		return http.StatusOK
 	})
 
-	m.Get(recvByteSlicePath, ByteSliceMessages(), func(context martini.Context, receiver <-chan []byte, done <-chan bool) int {
+	m.Get(recvByteSlicePath, ByteSliceMessages(), func(context *macaron.Context, receiver <-chan []byte, done <-chan bool) int {
 		for {
 			select {
 			case msg := <-receiver:
@@ -210,7 +210,7 @@ func startServer() {
 		return http.StatusOK
 	})
 
-	m.Get(sendStringsPath, Messages(), func(context martini.Context, sender chan<- string, done <-chan bool, disconnect chan<- int) int {
+	m.Get(sendStringsPath, Messages(), func(context *macaron.Context, sender chan<- string, done <-chan bool, disconnect chan<- int) int {
 		ticker := time.NewTicker(1 * time.Millisecond)
 		bomb := time.After(4 * time.Millisecond)
 
@@ -232,7 +232,7 @@ func startServer() {
 		return http.StatusOK
 	})
 
-	m.Get(sendByteSlicePath, ByteSliceMessages(), func(context martini.Context, sender chan<- []byte, done <-chan bool, disconnect chan<- int) int {
+	m.Get(sendByteSlicePath, ByteSliceMessages(), func(context *macaron.Context, sender chan<- []byte, done <-chan bool, disconnect chan<- int) int {
 		ticker := time.NewTicker(1 * time.Millisecond)
 		bomb := time.After(4 * time.Millisecond)
 
@@ -439,7 +439,7 @@ func TestOptionsDefaultHandling(t *testing.T) {
 }
 
 func TestAllowedCrossOrigin(t *testing.T) {
-	m := martini.Classic()
+	m := macaron.Classic()
 
 	recorder := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/test", strings.NewReader(""))
@@ -449,7 +449,7 @@ func TestAllowedCrossOrigin(t *testing.T) {
 		t.Error(err)
 	}
 
-	m.Any("/test", Messages(&Options{AllowedOrigin: "https?://allowed\\.com$"}), func(context martini.Context, receiver <-chan string, done <-chan bool) int {
+	m.Any("/test", Messages(&Options{AllowedOrigin: "https?://allowed\\.com$"}), func(context *macaron.Context, receiver <-chan string, done <-chan bool) int {
 		return http.StatusOK
 	})
 
@@ -459,7 +459,7 @@ func TestAllowedCrossOrigin(t *testing.T) {
 }
 
 func TestDisallowedCrossOrigin(t *testing.T) {
-	m := martini.Classic()
+	m := macaron.Classic()
 
 	recorder := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/test", strings.NewReader(""))
@@ -478,7 +478,7 @@ func TestDisallowedCrossOrigin(t *testing.T) {
 }
 
 func TestDisallowedMethods(t *testing.T) {
-	m := martini.Classic()
+	m := macaron.Classic()
 
 	recorder := httptest.NewRecorder()
 	req, err := http.NewRequest("POST", "/test", strings.NewReader(""))

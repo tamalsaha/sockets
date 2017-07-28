@@ -1,12 +1,16 @@
-# sockets [![wercker status](https://app.wercker.com/status/4298e26d2bb869fc9b0134ad80ef5eb3/s/master "wercker status")](https://app.wercker.com/project/bykey/4298e26d2bb869fc9b0134ad80ef5eb3)
+# sockets
 
-Sockets to channels binding for Martini.
+Middlware sockets provides WebSocket to channels binding for [Macaron](https://github.com/go-macaron/macaron).
 
-[API Reference](http://godoc.org/github.com/beatrichartz/sockets)
+[API Reference](https://gowalker.org/github.com/go-macaron/sockets)
+
+### Installation
+
+	go get github.com/go-macaron/sockets
 
 ## Description
 
-Package `sockets` makes it fun to use websockets with Martini. Its aim is to provide an easy to use interface for socket handling which makes it possible to implement socket messaging with just one `select` statement listening to different channels.
+Package `sockets` makes it fun to use websockets with Macaron. Its aim is to provide an easy to use interface for socket handling which makes it possible to implement socket messaging with just one `select` statement listening to different channels.
 
 #### JSON
 
@@ -22,12 +26,12 @@ Package `sockets` makes it fun to use websockets with Martini. Its aim is to pro
 
 ## Usage
 
-Have a look into the [example directory](https://github.com/beatrichartz/martini-sockets/tree/master/example) to get a feeling for how to use the sockets package.
+Have a look into the [example directory](https://github.com/go-macaron/sockets/tree/master/example) to get a feeling for how to use the sockets package.
 
 This package essentially provides a binding of websockets to channels, which you can use as in the following, contrived example:
 
 ```go
-m.Get("/", sockets.JSON(Message{}), func(params martini.Params, receiver <-chan *Message, sender chan<- *Message, done <-chan bool, disconnect chan<- int, errorChannel <-chan error) {
+m.Get("/", sockets.JSON(Message{}), func(receiver <-chan *Message, sender chan<- *Message, done <-chan bool, disconnect chan<- int, errorChannel <-chan error) {
 	ticker := time.After(30 * time.Minute)
 	for {
 		select {
@@ -51,10 +55,11 @@ m.Get("/", sockets.JSON(Message{}), func(params martini.Params, receiver <-chan 
 })
 ```
 
-For a simple string messaging connection with string channels, use ``sockets.Message()``
+For a simple string messaging connection with string channels, use `sockets.Message()`.
 
 ## Options
-You can configure the options for sockets by passing in ``sockets.Options`` as the second argument to ``sockets.JSON`` or as the first argument to ``sockets.Message``. Use it to configure the following options (defaults are used here):
+
+You can configure the options for sockets by passing in `sockets.Options` as the second argument to `sockets.JSON` or as the first argument to `sockets.Message`. Use it to configure the following options (defaults are used here):
 
 ```go
 &sockets.Options{
@@ -104,27 +109,28 @@ You can configure the options for sockets by passing in ``sockets.Options`` as t
 ```
 
 ## Rundown
+
 Since it augments the level of websocket handling, it may prove useful if you know how this package does the channel mapping. Here's the rundown for a connection lifetime:
 
 1. Request Method (must be GET) and origin (can not be cross-origin) are tested. If any of these conditions fail, a HTTP status is returned accordingly and the next handler is ignored.
 
-2. The request is upgraded to a websocket connection. If this fails, ``http.StatusBadRequest`` is returned and the next handler is ignored.
+2. The request is upgraded to a websocket connection. If this fails, `http.StatusBadRequest` is returned and the next handler is ignored.
 
-3. The connection and its channels are created according to given options and mapped for dependency injection in ``martini``.
+3. The connection and its channels are created according to given options and mapped for dependency injection in Macaron.
 
 4. Three goroutines are started: One is waiting on the websocket for messages, another is waiting for messages from the next handler and occasionally pinging the client. The third is waiting for disconnection coming from both sides. All these goroutines are closed with the websocket, which is also why you should not try to send messages to a client after an error occurred.
 
 5. On the event of a disconnection sent either by the next handler or via the websocket or when an error occurs, the connection is closed with an appropriate or a given closing message.
 
 
-## ``gorilla`` vs ``go.net`` websockets
-The gorilla websocket package is a brilliant implementation of RFC 6455 compliant websockets which has [these advantages over the go.net implementation.](https://github.com/gorilla/websocket#protocol-compliance). 
+## `gorilla` vs `go.net` websockets
 
-## FAQ
-- Q: I am getting this error when compiling: `context.Set undefined (type martini.Context has no field or method Set)`
-  
-	A: This package depends on a recently updated version of the [`inject` package](https://github.com/codegangsta/inject) - update this package and the error should vanish.
+The gorilla websocket package is a brilliant implementation of RFC 6455 compliant websockets which has [these advantages over the go.net implementation.](https://github.com/gorilla/websocket#protocol-compliance). 
 
 ## Authors
 
 * [Beat Richartz](https://github.com/beatrichartz)
+
+## License
+
+This project is under MIT License. See the [LICENSE](LICENSE) file for the full license text.
