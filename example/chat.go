@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/go-martini/martini"
-	"github.com/martini-contrib/render"
-	"github.com/beatrichartz/martini-sockets"
 	"sync"
+
+	"github.com/go-macaron/sockets"
+	"gopkg.in/macaron.v1"
 )
 
 // Chat top level
@@ -84,7 +84,7 @@ func (r *Room) removeClient(client *Client) {
 func (r *Room) messageOtherClients(client *Client, msg *Message) {
 	r.Lock()
 	msg.From = client.Name
-		
+
 	for _, c := range r.clients {
 		if c != client {
 			c.out <- msg
@@ -101,10 +101,10 @@ func newChat() *Chat {
 var chat *Chat
 
 func main() {
-	m := martini.Classic()
+	m := macaron.Classic()
 
 	// Use Renderer
-	m.Use(render.Renderer(render.Options{
+	m.Use(macaron.Renderer(macaron.RenderOptions{
 		Layout: "layout",
 	}))
 
@@ -112,19 +112,19 @@ func main() {
 	chat = newChat()
 
 	// Index
-	m.Get("/", func(r render.Render) {
-		r.HTML(200, "index", "")
+	m.Get("/", func(ctx *macaron.Context) {
+		c.HTML(200, "index", "")
 	})
 
 	// render the room
-	m.Get("/rooms/:name", func(r render.Render, params martini.Params) {
-		r.HTML(200, "room", map[string]map[string]string{"room": map[string]string{"name": params["name"]}})
+	m.Get("/rooms/:name", func(ctx *macaron.Context) {
+		c.HTML(200, "room", map[string]map[string]string{"room": map[string]string{"name": c.Params(":name")}})
 	})
 
 	// This is the sockets connection for the room, it is a json mapping to sockets.
-	m.Get("/sockets/rooms/:name/:clientname", sockets.JSON(Message{}), func(params martini.Params, receiver <-chan *Message, sender chan<- *Message, done <-chan bool, disconnect chan<- int, err <-chan error) (int,string) {
-		client := &Client{params["clientname"], receiver, sender, done, err, disconnect}
-		r := chat.getRoom(params["name"])
+	m.Get("/sockets/rooms/:name/:clientname", sockets.JSON(Message{}), func(ctx *macaron.Context, receiver <-chan *Message, sender chan<- *Message, done <-chan bool, disconnect chan<- int, err <-chan error) (int, string) {
+		client := &Client{c.Params("clientname"), receiver, sender, done, err, disconnect}
+		r := chat.getRoom(c.Params("name"))
 		r.appendClient(client)
 
 		// A single select can be used to do all the messaging

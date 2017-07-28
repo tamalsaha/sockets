@@ -31,7 +31,7 @@ Have a look into the [example directory](https://github.com/go-macaron/sockets/t
 This package essentially provides a binding of websockets to channels, which you can use as in the following, contrived example:
 
 ```go
-m.Get("/", sockets.JSON(Message{}), func(receiver <-chan *Message, sender chan<- *Message, done <-chan bool, disconnect chan<- int, errorChannel <-chan error) {
+m.Get("/", sockets.JSON(Message{}), func(ctx *macaron.Context, receiver <-chan *Message, sender chan<- *Message, done <-chan bool, disconnect chan<- int, errorChannel <-chan error) {
 	ticker := time.After(30 * time.Minute)
 	for {
 		select {
