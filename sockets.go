@@ -34,7 +34,7 @@ const (
 	defaultMaxMessageSize    int64 = 65536
 	defaultSendChannelBuffer       = 10
 	defaultRecvChannelBuffer       = 10
-	defaultAllowedOrigin           = "https?://{{host}}$"
+	defaultAllowedOrigin           = "https?://(\\w+.)?{{host}}(:\\d+)?$"
 )
 
 var (
@@ -832,7 +832,11 @@ func upgradeRequest(resp http.ResponseWriter, req *http.Request, o *Options) (*w
 		return nil, http.StatusMethodNotAllowed, errors.New("Method not allowed")
 	}
 
-	allowedOrigin := replacementRegexp.ReplaceAllString(o.AllowedOrigin, req.Host)
+	hostname, _, err := net.SplitHostPort(req.Host)
+	if err != nil {
+		return nil, http.StatusBadRequest, err
+	}
+	allowedOrigin := replacementRegexp.ReplaceAllString(o.AllowedOrigin, hostname)
 	if r, err := regexp.MatchString(allowedOrigin, req.Header.Get("Origin")); !r || err != nil {
 		o.log("Origin %s is not allowed", LogLevelWarning, req.RemoteAddr, req.Host)
 		return nil, http.StatusForbidden, errors.New("Origin not allowed")
